@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+require 'resolv'
+
+def usage
+  puts <<-EOF.gsub(/^\ \ /, '')
+  #{__FILE__} <nameserver> <nameserver> <record>
+  EOF
+end
+
+def record_set(nameserver, query)
+  resolver = Resolv::DNS.new(:nameserver => [nameserver])
+  resolver.getresources(query, Resolv::DNS::Resource::IN::ANY).map do |r|
+    r.address.to_s
+  end.sort
+end
+
+if ARGV.size != 3
+  usage
+  exit 1
+end
+
+nameservers = [ARGV[0], ARGV[1]]
+record = ARGV[2]
+
+results=[]
+nameservers.each do |nameserver|
+  results.push(record_set(nameserver, record))
+end
+
+if results.first.empty?
+  puts "no records found"
+  exit 1
+elsif results.first == results.last
+  puts "matches"
+  exit 0
+else
+  puts "does not match"
+  exit 1
+end
